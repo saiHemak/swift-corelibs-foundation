@@ -300,6 +300,7 @@
 		5BF7AEC01BCD51F9008F214A /* NSUUID.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BDC3F4B1BCC5DCB00ED97BB /* NSUUID.swift */; };
 		5BF7AEC11BCD51F9008F214A /* NSValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BDC3F4C1BCC5DCB00ED97BB /* NSValue.swift */; };
 		5FE52C951D147D1C00F7D270 /* TestNSTextCheckingResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE52C941D147D1C00F7D270 /* TestNSTextCheckingResult.swift */; };
+		618B0D7A1F0249C500F40976 /* FTPURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618B0D791F0249C500F40976 /* FTPURLProtocol.swift */; };
 		61E0117D1C1B5590000037DD /* NSRunLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = EADE0B761BD15DFF00C49C64 /* NSRunLoop.swift */; };
 		61E0117E1C1B55B9000037DD /* NSTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BDC3F481BCC5DCB00ED97BB /* NSTimer.swift */; };
 		61E0117F1C1B5990000037DD /* CFRunLoop.c in Sources */ = {isa = PBXBuildFile; fileRef = 5B5D88D81BBC9AD800234F36 /* CFRunLoop.c */; };
@@ -754,6 +755,7 @@
 		5EB6A15C1C188FC40037DCB8 /* TestNSJSONSerialization.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestNSJSONSerialization.swift; sourceTree = "<group>"; };
 		5EF673AB1C28B527006212A3 /* TestNSNotificationQueue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestNSNotificationQueue.swift; sourceTree = "<group>"; };
 		5FE52C941D147D1C00F7D270 /* TestNSTextCheckingResult.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestNSTextCheckingResult.swift; sourceTree = "<group>"; };
+		618B0D791F0249C500F40976 /* FTPURLProtocol.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FTPURLProtocol.swift; sourceTree = "<group>"; };
 		61A395F91C2484490029B337 /* TestNSLocale.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestNSLocale.swift; sourceTree = "<group>"; };
 		61D6C9EE1C1DFE9500DEF583 /* TestNSTimer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestNSTimer.swift; sourceTree = "<group>"; };
 		61E0117B1C1B554D000037DD /* TestNSRunLoop.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestNSRunLoop.swift; sourceTree = "<group>"; };
@@ -977,6 +979,8 @@
 		5B1FD9C71D6D162D0080E83C /* Session */ = {
 			isa = PBXGroup;
 			children = (
+				618B0D781F02498D00F40976 /* libcurlhelpers */,
+				618B0D771F02497A00F40976 /* ftp */,
 				E4F889331E9CF04D008A70EB /* http */,
 				5B1FD9C81D6D16580080E83C /* Configuration.swift */,
 				5B1FD9CE1D6D16580080E83C /* NSURLSession.swift */,
@@ -1335,6 +1339,24 @@
 			path = Foundation;
 			sourceTree = "<group>";
 		};
+		618B0D771F02497A00F40976 /* ftp */ = {
+			isa = PBXGroup;
+			children = (
+				618B0D791F0249C500F40976 /* FTPURLProtocol.swift */,
+			);
+			name = ftp;
+			sourceTree = "<group>";
+		};
+		618B0D781F02498D00F40976 /* libcurlhelpers */ = {
+			isa = PBXGroup;
+			children = (
+				B9974B901EDF4A22007F15B8 /* MultiHandle.swift */,
+				B9974B911EDF4A22007F15B8 /* libcurlHelpers.swift */,
+				B9974B951EDF4A22007F15B8 /* EasyHandle.swift */,
+			);
+			name = libcurlhelpers;
+			sourceTree = "<group>";
+		};
 		9F4ADBCF1ECD4F56001F0B3D /* xdgTestHelper */ = {
 			isa = PBXGroup;
 			children = (
@@ -1350,11 +1372,8 @@
 			children = (
 				B9974B921EDF4A22007F15B8 /* HTTPURLProtocol.swift */,
 				B9974B8F1EDF4A22007F15B8 /* TransferState.swift */,
-				B9974B901EDF4A22007F15B8 /* MultiHandle.swift */,
-				B9974B911EDF4A22007F15B8 /* libcurlHelpers.swift */,
 				B9974B931EDF4A22007F15B8 /* HTTPMessage.swift */,
 				B9974B941EDF4A22007F15B8 /* HTTPBodySource.swift */,
-				B9974B951EDF4A22007F15B8 /* EasyHandle.swift */,
 			);
 			name = http;
 			sourceTree = "<group>";
@@ -1421,8 +1440,6 @@
 				A058C2011E529CF100B07AA1 /* TestMassFormatter.swift */,
 				BF8E65301DC3B3CB005AB5C3 /* TestNotification.swift */,
 				3EA9D66F1EF0532D00B362D6 /* TestJSONEncoder.swift */,
-				159884911DCC877700E3314C /* TestNSHTTPCookieStorage.swift */,
-				D4FE895A1D703D1100DA7986 /* TestURLRequest.swift */,
 				C93559281C12C49F009FD6A9 /* TestNSAffineTransform.swift */,
 				EA66F63C1BF1619600136161 /* TestNSArray.swift */,
 				294E3C1C1CC5E19300E4F44C /* TestNSAttributedString.swift */,
@@ -2201,6 +2218,7 @@
 				EADE0BB81BD15E0000C49C64 /* Process.swift in Sources */,
 				5BF7AEB31BCD51F9008F214A /* NSObjCRuntime.swift in Sources */,
 				5BD31D3F1D5D19D600563814 /* Dictionary.swift in Sources */,
+				618B0D7A1F0249C500F40976 /* FTPURLProtocol.swift in Sources */,
 				B9974B9B1EDF4A22007F15B8 /* HTTPBodySource.swift in Sources */,
 				5B94E8821C430DE70055C035 /* NSStringAPI.swift in Sources */,
 				5B0163BB1D024EB7003CCD96 /* DateComponents.swift in Sources */,

@@ -351,6 +351,24 @@ class TestURLSession : XCTestCase {
         d.run(with: url)
         waitForExpectations(timeout: 12)
     }
+    
+    func test_ftpdatatask() {
+        let ftpURL = "ftp://speedtest.tele2.net/5MB.zip"
+        let  req = URLRequest(url: URL(string: ftpURL)!)
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 10 //check this behavior on Darwin
+        let expect = expectation(description: "URL test with custom protocol")
+        let sesh = URLSession(configuration: configuration)
+        let dataTask1 = sesh.dataTask(with: req, completionHandler: { data, res, error in
+            // print(String(data: data!, encoding: .utf8)!)
+            print(error)
+            print(data)
+            
+        })
+        dataTask1.resume()
+         waitForExpectations(timeout: 60)
+    }
+   
 }
 
 class SessionDelegate: NSObject, URLSessionDelegate {

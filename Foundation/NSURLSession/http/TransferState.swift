@@ -45,8 +45,27 @@ extension _HTTPURLProtocol {
         /// Describes what to do with received body data for this transfer:
     }
 }
+extension _FTPURLProtocol {
+    /// State related to an ongoing transfer.
+    ///
+    /// This contains headers received so far, body data received so far, etc.
+    ///
+    /// There's a strict 1-to-1 relationship between an `EasyHandle` and a
+    /// `TransferState`.
+    ///
+    /// - TODO: Might move the `EasyHandle` into this `struct` ?
+    /// - SeeAlso: `URLSessionTask.EasyHandle`
+    internal struct _FTPTransferState {
+        /// The URL that's being requested
+        let url: URL
+        let bodyDataDrain: _DataDrain
+        /// Describes what to do with received body data for this transfer:
+    }
+}
 
-extension _HTTPURLProtocol {
+
+extension URLProtocol {
+    
     enum _DataDrain {
         /// Concatenate in-memory
         case inMemory(NSMutableData?)
