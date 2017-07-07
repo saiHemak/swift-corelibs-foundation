@@ -39,6 +39,7 @@ class TestURLSession : XCTestCase {
             ("test_timeoutInterval", test_timeoutInterval),
             ("test_customProtocol", test_customProtocol),
             ("test_httpRedirection", test_httpRedirection),
+	    ("test_ftpdatatask",test_ftpdatatask)
         ]
     }
     
@@ -362,7 +363,9 @@ class TestURLSession : XCTestCase {
         let dataTask1 = sesh.dataTask(with: req, completionHandler: { data, res, error in
             // print(String(data: data!, encoding: .utf8)!)
             print(error)
-            print(data)
+            print(" TEST CASE \(data)")
+            XCTAssertNotNil(data)
+            defer { expect.fulfill() }
             
         })
         dataTask1.resume()

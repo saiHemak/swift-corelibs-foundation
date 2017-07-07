@@ -39,7 +39,7 @@ extension _HTTPURLProtocol {
         /// Once the headers is complete, this will contain the response
         var response: HTTPURLResponse?
         /// The body data to be sent in the request
-        let requestBodySource: _HTTPBodySource?
+        let requestBodySource: _BodySource?
         /// Body data received
         let bodyDataDrain: _DataDrain
         /// Describes what to do with received body data for this transfer:
@@ -60,9 +60,35 @@ extension _FTPURLProtocol {
         let url: URL
         let bodyDataDrain: _DataDrain
         /// Describes what to do with received body data for this transfer:
+        /// Raw headers received.
+        let parsedResponseHeader: _ParsedResponseHeader
+        /// Once the headers is complete, this will contain the response
+        var response: URLResponse?
+        /// The body data to be sent in the request
+        let requestBodySource: _BodySource?
     }
 }
 
+extension _FTPURLProtocol._FTPTransferState {
+    /// Transfer state that can receive body data, but will not send body data.
+    init(url: URL, bodyDataDrain: _FTPURLProtocol._DataDrain) {
+        self.url = url
+        self.bodyDataDrain = bodyDataDrain
+        self.response = nil
+        self.parsedResponseHeader = _FTPURLProtocol._ParsedResponseHeader()
+        self.requestBodySource = nil
+    }
+    
+    /// Transfer state that sends body data and can receive body data.
+    init(url: URL, bodyDataDrain: _FTPURLProtocol._DataDrain, bodySource: _BodySource) {
+        self.url = url
+        self.parsedResponseHeader = _FTPURLProtocol._ParsedResponseHeader()
+        self.response = nil
+        self.requestBodySource = bodySource
+        self.bodyDataDrain = bodyDataDrain
+    }
+    
+}
 
 extension URLProtocol {
     
@@ -76,6 +102,66 @@ extension URLProtocol {
     }
 }
 
+extension _FTPURLProtocol._FTPTransferState {
+    enum _Error: Error {
+        case parseSingleLineError
+        case parseCompleteHeaderError
+    }
+    /// Appends a header line
+    ///
+    /// Will set the complete response once the header is complete, i.e. the
+    /// return value's `isHeaderComplete` will then by `true`.
+    ///
+    /// - Throws: When a parsing error occurs
+    func byAppending(headerLine data: Data) throws -> _FTPURLProtocol._FTPTransferState {
+        let line = String(data: data, encoding: String.Encoding.utf8)
+        if (line?.starts(with: "226"))! {
+            return self
+        }
+        guard let h = parsedResponseHeader.byAppending(headerLine: data) else {
+            throw _Error.parseSingleLineError
+        }
+        
+        if case .complete(let lines) = h {
+            
+            let response = lines.createURLResponse(for: url)
+            guard response != nil else {
+                throw _Error.parseCompleteHeaderError
+            }
+            return _FTPURLProtocol._FTPTransferState(url: url, bodyDataDrain: bodyDataDrain,parsedResponseHeader: _FTPURLProtocol._ParsedResponseHeader(), response: response, requestBodySource: requestBodySource)
+        } else {
+            return _FTPURLProtocol._FTPTransferState(url: url, bodyDataDrain: bodyDataDrain, parsedResponseHeader: _FTPURLProtocol._ParsedResponseHeader(), response: nil, requestBodySource: requestBodySource)
+        }
+    }
+    var isHeaderComplete: Bool {
+        return response != nil
+    }
+    /// Append body data
+    ///
+    /// - Important: This will mutate the existing `NSMutableData` that the
+    ///     struct may already have in place -- copying the data is too
+    ///     expensive. This behaviour
+    func byAppending(bodyData buffer: Data) -> _FTPURLProtocol._FTPTransferState {
+        switch bodyDataDrain {
+        case .inMemory(let bodyData):
+            let data: NSMutableData = bodyData ?? NSMutableData()
+            data.append(buffer)
+            let drain = _FTPURLProtocol._DataDrain.inMemory(data)
+            return _FTPURLProtocol._FTPTransferState(url: url, bodyDataDrain: drain, parsedResponseHeader: parsedResponseHeader,response: response,requestBodySource: requestBodySource )
+        case .toFile(_, let fileHandle):
+            //TODO: Create / open the file for writing
+            // Append to the file
+            _ = fileHandle!.seekToEndOfFile()
+            fileHandle!.write(buffer)
+            return self
+        case .ignore:
+            return self
+        }
+    }
+    
+}
+
+
 extension _HTTPURLProtocol._HTTPTransferState {
     /// Transfer state that can receive body data, but will not send body data.
     init(url: URL, bodyDataDrain: _HTTPURLProtocol._DataDrain) {
@@ -86,7 +172,7 @@ extension _HTTPURLProtocol._HTTPTransferState {
         self.bodyDataDrain = bodyDataDrain
     }
     /// Transfer state that sends body data and can receive body data.
-    init(url: URL, bodyDataDrain: _HTTPURLProtocol._DataDrain, bodySource: _HTTPBodySource) {
+    init(url: URL, bodyDataDrain: _HTTPURLProtocol._DataDrain, bodySource: _BodySource) {
         self.url = url
         self.parsedResponseHeader = _HTTPURLProtocol._ParsedResponseHeader()
         self.response = nil
@@ -107,6 +193,7 @@ extension _HTTPURLProtocol._HTTPTransferState {
     ///
     /// - Throws: When a parsing error occurs
     func byAppending(headerLine data: Data) throws -> _HTTPURLProtocol._HTTPTransferState {
+        
         guard let h = parsedResponseHeader.byAppending(headerLine: data) else {
             throw _Error.parseSingleLineError
         }
@@ -118,6 +205,7 @@ extension _HTTPURLProtocol._HTTPTransferState {
             }
             return _HTTPURLProtocol._HTTPTransferState(url: url, parsedResponseHeader: _HTTPURLProtocol._ParsedResponseHeader(), response: response, requestBodySource: requestBodySource, bodyDataDrain: bodyDataDrain)
         } else {
+            
             return _HTTPURLProtocol._HTTPTransferState(url: url, parsedResponseHeader: h, response: nil, requestBodySource: requestBodySource, bodyDataDrain: bodyDataDrain)
         }
     }
@@ -137,11 +225,11 @@ extension _HTTPURLProtocol._HTTPTransferState {
             let drain = _HTTPURLProtocol._DataDrain.inMemory(data)
             return _HTTPURLProtocol._HTTPTransferState(url: url, parsedResponseHeader: parsedResponseHeader, response: response, requestBodySource: requestBodySource, bodyDataDrain: drain)
         case .toFile(_, let fileHandle):
-             //TODO: Create / open the file for writing
-             // Append to the file
-             _ = fileHandle!.seekToEndOfFile()
-             fileHandle!.write(buffer)
-             return self
+            //TODO: Create / open the file for writing
+            // Append to the file
+            _ = fileHandle!.seekToEndOfFile()
+            fileHandle!.write(buffer)
+            return self
         case .ignore:
             return self
         }
@@ -150,7 +238,8 @@ extension _HTTPURLProtocol._HTTPTransferState {
     ///
     /// This can be used to either set the initial body source, or to reset it
     /// e.g. when restarting a transfer.
-    func bySetting(bodySource newSource: _HTTPBodySource) -> _HTTPURLProtocol._HTTPTransferState {
+    func bySetting(bodySource newSource: _BodySource) -> _HTTPURLProtocol._HTTPTransferState {
         return _HTTPURLProtocol._HTTPTransferState(url: url, parsedResponseHeader: parsedResponseHeader, response: response, requestBodySource: newSource, bodyDataDrain: bodyDataDrain)
     }
 }
+

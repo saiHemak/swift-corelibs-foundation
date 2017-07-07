@@ -40,15 +40,15 @@ internal func splitData(dispatchData data: DispatchData, atPosition position: In
 }
 
 /// A (non-blocking) source for HTTP body data.
-internal protocol _HTTPBodySource: class {
+internal protocol _BodySource: class {
     /// Get the next chunck of data.
     ///
     /// - Returns: `.data` until the source is exhausted, at which point it will
     /// return `.done`. Since this is non-blocking, it will return `.retryLater`
     /// if no data is available at this point, but will be available later.
-    func getNextChunk(withLength length: Int) -> _HTTPBodySourceDataChunk
+    func getNextChunk(withLength length: Int) -> _BodySourceDataChunk
 }
-internal enum _HTTPBodySourceDataChunk {
+internal enum _BodySourceDataChunk {
     case data(DispatchData)
     /// The source is depleted.
     case done
@@ -58,19 +58,19 @@ internal enum _HTTPBodySourceDataChunk {
 }
 
 /// A HTTP body data source backed by `dispatch_data_t`.
-internal final class _HTTPBodyDataSource {
+internal final class _BodyDataSource {
     var data: DispatchData! 
     init(data: DispatchData) {
         self.data = data
     }
 }
 
-extension _HTTPBodyDataSource : _HTTPBodySource {
+extension _BodyDataSource : _BodySource {
     enum _Error : Error {
         case unableToRewindData
     }
 
-    func getNextChunk(withLength length: Int) -> _HTTPBodySourceDataChunk {
+    func getNextChunk(withLength length: Int) -> _BodySourceDataChunk {
         let remaining = data.count
         if remaining == 0 {
             return .done
@@ -98,7 +98,7 @@ extension _HTTPBodyDataSource : _HTTPBodySource {
 /// - Note: Calls to `getNextChunk(withLength:)` and callbacks from libdispatch
 /// should all happen on the same (serial) queue, and hence this code doesn't
 /// have to be thread safe.
-internal final class _HTTPBodyFileSource {
+internal final class _BodyFileSource {
     fileprivate let fileURL: URL
     fileprivate let channel: DispatchIO 
     fileprivate let workQueue: DispatchQueue 
@@ -146,7 +146,7 @@ internal final class _HTTPBodyFileSource {
     }
 }
 
-fileprivate extension _HTTPBodyFileSource {
+fileprivate extension _BodyFileSource {
     fileprivate var desiredBufferLength: Int { return 3 * CFURLSessionMaxWriteSize }
     /// Enqueue a dispatch I/O read to fill the buffer.
     ///
@@ -208,8 +208,8 @@ fileprivate extension _HTTPBodyFileSource {
     }
 }
 
-extension _HTTPBodyFileSource : _HTTPBodySource {
-    func getNextChunk(withLength length: Int) -> _HTTPBodySourceDataChunk {    
+extension _BodyFileSource : _BodySource {
+    func getNextChunk(withLength length: Int) -> _BodySourceDataChunk {
         switch availableChunk {
         case .empty:
             readNextChunk()

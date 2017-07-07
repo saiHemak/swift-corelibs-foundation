@@ -526,13 +526,32 @@ public let URLSessionDownloadTaskResumeData: String = "NSURLSessionDownloadTaskR
 extension _ProtocolClient : URLProtocolClient {
 
     func urlProtocol(_ protocol: URLProtocol, didReceive response: URLResponse, cacheStoragePolicy policy: URLCache.StoragePolicy) {
-        `protocol`.task?.response = response
+        guard let task = `protocol`.task else { fatalError("Received response, but there's no task.") }
+        task.response = response
+        let session = task.session as! URLSession
+        guard let dataTask = task as? URLSessionDataTask else { return }
+        switch session.behaviour(for: task) {
+        case .taskDelegate(let delegate as URLSessionDataDelegate):
+            session.delegateQueue.addOperation {
+                delegate.urlSession(session, dataTask: dataTask, didReceive: response, completionHandler: { _ in
+                    URLSession.printDebug("warning: Ignoring disposition from completion handler.")
+                })
+            }
+        case .noDelegate, .taskDelegate, .dataCompletionHandler, .downloadCompletionHandler:
+            break
+        }
     }
 
     func urlProtocolDidFinishLoading(_ protocol: URLProtocol) {
         guard let task = `protocol`.task else { fatalError() }
         guard let session = task.session as? URLSession else { fatalError() }
         switch session.behaviour(for: task) {
+        case .taskDelegate(let delegate) where delegate is URLSessionDownloadDelegate:
+            let downloadDelegate = delegate as! URLSessionDownloadDelegate
+            let downloadTask = task as! URLSessionDownloadTask
+            session.delegateQueue.addOperation {
+                downloadDelegate.urlSession(session, downloadTask: downloadTask, didFinishDownloadingTo: `protocol`.properties[URLProtocol._PropertyKey.temporaryFileURL] as! URL)
+            }
         case .taskDelegate(let delegate):
             session.delegateQueue.addOperation {
                 delegate.urlSession(session, task: task, didCompleteWithError: nil)
@@ -543,13 +562,14 @@ extension _ProtocolClient : URLProtocolClient {
             task.state = .completed
             session.taskRegistry.remove(task)
         case .dataCompletionHandler(let completion):
-            let data = Data()
-            guard let client = `protocol`.client else { fatalError() }
-            client.urlProtocol(`protocol`, didLoad: data)
-            return
+            session.delegateQueue.addOperation {
+                completion(`protocol`.properties[URLProtocol._PropertyKey.responseData] as? Data ?? Data(), task.response, nil)
+                task.state = .completed
+                session.taskRegistry.remove(task)
+            }
         case .downloadCompletionHandler(let completion):
             session.delegateQueue.addOperation {
-                completion(task.currentRequest?.url, task.response, nil)
+                completion(`protocol`.properties[URLProtocol._PropertyKey.temporaryFileURL] as? URL, task.response, nil)
                 task.state = .completed
                 session.taskRegistry.remove(task)
             }
@@ -565,15 +585,15 @@ extension _ProtocolClient : URLProtocolClient {
     }
 
     func urlProtocol(_ protocol: URLProtocol, didLoad data: Data) {
+        `protocol`.properties[.responseData] = data
         guard let task = `protocol`.task else { fatalError() }
         guard let session = task.session as? URLSession else { fatalError() }
         switch session.behaviour(for: task) {
-        case .dataCompletionHandler(let completion):
-            guard let s = task.session as? URLSession else { fatalError() }
-            s.delegateQueue.addOperation {
-                completion(data, task.response, nil)
-                task.state = .completed
-                s.taskRegistry.remove(task)
+        case .taskDelegate(let delegate):
+            let dataDelegate = delegate as? URLSessionDataDelegate
+            let dataTask = task as? URLSessionDataTask
+            session.delegateQueue.addOperation {
+                dataDelegate?.urlSession(session, dataTask: dataTask!, didReceive: data)
             }
         default: return
         }
@@ -613,5 +633,12 @@ extension _ProtocolClient : URLProtocolClient {
 
     func urlProtocol(_ protocol: URLProtocol, wasRedirectedTo request: URLRequest, redirectResponse: URLResponse) {
         NSUnimplemented()
+    }
+}
+
+extension URLProtocol {
+    enum _PropertyKey: String {
+        case responseData
+        case temporaryFileURL
     }
 }
