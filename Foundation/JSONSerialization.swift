@@ -834,6 +834,9 @@ private struct JSONReader {
                 let shouldUseReferenceType = opt.contains(.useReferenceNumericTypes)
 
                 if intDistance == doubleDistance {
+                    if intResult > 0 {
+			return (shouldUseReferenceType ?  UInt64(intResult) :  UInt64(intResult), intDistance)
+		    }
                     return (shouldUseReferenceType ? NSNumber(value: intResult) : intResult,
                             intDistance)
                 }
