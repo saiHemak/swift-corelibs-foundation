@@ -533,6 +533,7 @@ class TestURLComponents : XCTestCase {
             ("test_createURLWithComponents", test_createURLWithComponents),
             ("test_path", test_path),
             ("test_percentEncodedPath", test_percentEncodedPath),
+	    ("test_emptyURLComponents", test_emptyURLComponents),
         ]
     }
     
@@ -677,5 +678,13 @@ class TestURLComponents : XCTestCase {
 
         let c6 = URLComponents(string: "http://swift.org:80/foo/b%20r")
         XCTAssertEqual(c6?.percentEncodedPath, "/foo/b%20r")
+    }
+
+    func test_emptyURLComponents() {
+	let baseUrl = URL(string: "https://www.pointfree.co/")
+        var urlComponents = URLComponents()
+        let url = urlComponents.url(relativeTo: baseUrl)
+        print(" URL:     \(url) \(baseUrl)  JUMP \(urlComponents)")
+	//XCTAssertEqual(url!,"-- https://www.pointfree.co/")
     }
 }
