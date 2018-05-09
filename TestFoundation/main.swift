@@ -20,7 +20,7 @@ _ = signal(SIGPIPE, SIG_IGN)
 
 // For the Swift version of the Foundation tests, we must manually list all test cases here.
 XCTMain([
-    testCase(TestAffineTransform.allTests),
+/*    testCase(TestAffineTransform.allTests),
     testCase(TestNSArray.allTests),
     testCase(TestBundle.allTests),
     testCase(TestByteCountFormatter.allTests),
@@ -97,9 +97,9 @@ XCTMain([
     testCase(TestProgress.allTests),
     testCase(TestObjCRuntime.allTests),
     testCase(TestNotification.allTests),
-    testCase(TestMassFormatter.allTests),
+    testCase(TestMassFormatter.allTests),*/
     testCase(TestJSONEncoder.allTests),
     testCase(TestCodable.allTests),
-    testCase(TestUnit.allTests),
-    testCase(TestNSLock.allTests),
+    /*testCase(TestUnit.allTests),
+    testCase(TestNSLock.allTests),*/
 ])
