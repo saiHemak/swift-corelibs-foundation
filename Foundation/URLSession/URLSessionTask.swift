@@ -578,7 +578,7 @@ extension _ProtocolClient : URLProtocolClient {
                 let urlError = URLError(_nsError: NSError(domain: NSURLErrorDomain, code: NSURLErrorUserAuthenticationRequired, userInfo: nil))
                 urlProtocol(`protocol`, didFailWithError: urlError)
             }
-	    return
+	   return
         }
         switch session.behaviour(for: task) {
         case .taskDelegate(let delegate):
